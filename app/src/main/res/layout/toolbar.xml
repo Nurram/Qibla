@@ -1,29 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.appbar.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<com.google.android.material.appbar.AppBarLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/appbar"
     android:layout_width="match_parent"
-    android:layout_height="?actionBarSize">
+    android:layout_height="?actionBarSize"
+    android:background="@color/colorPrimaryDark">
 
-    <RelativeLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:elevation="0dp"/>
-
-        <TextView
-            android:id="@+id/toolbar_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:text="Qibla"
-            android:textColor="@color/colorPrimaryDark"
-            android:textSize="16sp"
-            android:layout_centerInParent="true"/>
-    </RelativeLayout>
-
+        android:layout_height="match_parent"
+        app:title="@string/app_name"
+        app:titleTextColor="@color/colorPrimary"/>
 </com.google.android.material.appbar.AppBarLayout>

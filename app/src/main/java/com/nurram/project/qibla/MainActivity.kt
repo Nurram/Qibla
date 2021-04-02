@@ -3,9 +3,11 @@ package com.nurram.project.qibla
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuItem
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import android.widget.Toast
@@ -63,15 +65,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu, menu)
-        return super.onCreateOptionsMenu(menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        setupCompass()
+        return true
     }
 
     private fun setupCompass() {
         val permissionGranted = pref.getBoolean("permission_granted")
         if (permissionGranted) {
-            getBearing()
+            fetchGPS()
         } else {
             binding.qiblaDegree.text = resources.getString(R.string.msg_permission_not_granted_yet)
             binding.qiblaLocation.text = resources.getString(R.string.msg_permission_not_granted_yet)
@@ -84,9 +91,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         compass = Compass(this)
-        val cl = CompassListener { azimuth ->
-            adjustDial(azimuth)
-            adjustArrowQibla(azimuth)
+        val cl = object : CompassListener {
+            override fun onNewAzimuth(azimuth: Float) {
+                adjustDial(azimuth)
+                adjustArrowQibla(azimuth)
+            }
         }
         compass.setListener(cl)
     }
@@ -121,22 +130,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    fun getBearing() {
-        val qiblaDeg = pref.getFloat("kiblat_derajat")
-        if (qiblaDeg > 0.0001) {
-            val strYourLocation: String = if (gps?.location != null) resources.getString(R.string.your_location) + " " + gps!!.location.latitude + ", " + gps!!.location.longitude else resources.getString(R.string.unable_to_get_your_location)
-            binding.qiblaLocation.text = strYourLocation
-            val strKaabaDirection: String = java.lang.String.format(Locale.ENGLISH, "%.0f", qiblaDeg)
-                    .toString() + " " + resources.getString(R.string.degree) + " " + getDirectionString(qiblaDeg)
-            binding.qiblaDegree.text = strKaabaDirection
-
-
-            binding.qiblaMecca.GONE()
-        } else {
-            fetchGPS()
-        }
-    }
+//    @SuppressLint("MissingPermission")
+//    fun getBearing() {
+//        val qiblaDeg = pref.getFloat("kiblat_derajat")
+//        if (qiblaDeg > 0.0001) {
+//
+//            val geocoder = Geocoder(this, Locale.getDefault())
+//            val address = geocoder.getFromLocation(gps!!.lat, gps!!.lng, 1)
+//
+//            val strYourLocation: String =
+//                    if (gps?.loc != null) "${address[0].locality.split(" ")[1]} " +
+//                            "${address[0].subAdminArea.split(" ")[1]}"
+//                    else resources.getString(R.string.unable_to_get_your_location)
+//
+//            binding.qiblaLocation.text = strYourLocation
+//            val strKaabaDirection: String = java.lang.String.format(Locale.ENGLISH, "%.0f", qiblaDeg)
+//                    .toString() + " " + resources.getString(R.string.degree) + " " + getDirectionString(qiblaDeg)
+//            binding.qiblaDegree.text = strKaabaDirection
+//
+//
+//            binding.qiblaMecca.GONE()
+//        } else {
+//            fetchGPS()
+//        }
+//    }
 
     private fun getDirectionString(azimuthDegrees: Float): String {
         var where = "NW"
@@ -173,20 +190,25 @@ class MainActivity : AppCompatActivity() {
         val result: Double
         gps = GPSTracker(this)
         if (gps!!.canGetLocation()) {
-            val myLat = gps!!.latitude
-            val myLng = gps!!.longitude
-            val strYourLocation = resources.getString(R.string.your_location) + " " + myLat + ", " + myLng
+            val lat = gps!!.lat
+            val lng = gps!!.lng
+
+            val geocoder = Geocoder(this, Locale.getDefault())
+            val address = geocoder.getFromLocation(lat, lng, 1)
+            val strYourLocation = "${address[0].locality.split(" ")[1]} " +
+                    "${address[0].subAdminArea.split(" ")[1]}"
+
             binding.qiblaLocation.text = strYourLocation
 
-            if (myLat < 0.001 && myLng < 0.001) {
+            if (lat < 0.001 && lng < 0.001) {
                 binding.qiblaMecca.GONE()
                 binding.qiblaDegree.text = resources.getString(R.string.location_not_ready)
                 binding.qiblaLocation.text = resources.getString(R.string.location_not_ready)
-               } else {
+            } else {
                 val kaabaLng = 39.826206
                 val kaabaLat = Math.toRadians(21.422487)
-                val myLatRad = Math.toRadians(myLat)
-                val longDiff = Math.toRadians(kaabaLng - myLng)
+                val myLatRad = Math.toRadians(lat)
+                val longDiff = Math.toRadians(kaabaLng - lng)
                 val y = sin(longDiff) * cos(kaabaLat)
                 val x = cos(myLatRad) * sin(kaabaLat) - sin(myLatRad) * cos(kaabaLat) * cos(longDiff)
                 result = (Math.toDegrees(atan2(y, x)) + 360) % 360

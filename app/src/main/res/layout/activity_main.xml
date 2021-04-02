@@ -5,7 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorPrimaryDark"
     tools:context=".fragments.QiblaFragment">
+
+    <include layout="@layout/toolbar"/>
 
     <ProgressBar
         android:id="@+id/qibla_progress"
@@ -45,6 +48,7 @@
         android:layout_height="wrap_content"
         android:drawablePadding="8dp"
         android:textSize="32sp"
+        android:textColor="@color/colorPrimary"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/qibla_location"
         app:layout_constraintEnd_toEndOf="parent"
@@ -55,9 +59,9 @@
         android:id="@+id/qibla_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:drawablePadding="8dp"
-        android:textSize="24sp"
-        android:layout_marginBottom="40dp"
+        android:drawablePadding="4dp"
+        android:layout_marginBottom="48dp"
+        android:textColor="@color/colorPrimary"
         app:drawableStartCompat="@drawable/ic_baseline_location_on_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
