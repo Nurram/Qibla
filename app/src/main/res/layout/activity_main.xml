@@ -8,7 +8,16 @@
     android:background="@color/colorPrimaryDark"
     tools:context=".fragments.QiblaFragment">
 
-    <include layout="@layout/toolbar"/>
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?actionBarSize"
+        android:background="@color/colorPrimaryDark"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/app_name"
+        app:titleTextColor="@color/colorPrimary" />
 
     <ProgressBar
         android:id="@+id/qibla_progress"
@@ -37,6 +46,7 @@
         android:layout_height="200dp"
         android:contentDescription="@string/qibla_compass"
         android:src="@drawable/ic_baseline_arrow_upward_24"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/qibla_degree"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,16 +54,17 @@
 
     <TextView
         android:id="@+id/qibla_degree"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:drawablePadding="8dp"
-        android:textSize="32sp"
+        android:textSize="24sp"
         android:textColor="@color/colorPrimary"
+        android:textAlignment="center"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/qibla_location"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:text="180\u00B0" />
+        tools:text="180\u00B0 NW" />
 
     <TextView
         android:id="@+id/qibla_location"

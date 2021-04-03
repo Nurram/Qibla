@@ -11,6 +11,10 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
+import android.util.Log
+import android.widget.Toast
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.nurram.project.qibla.MainActivity
 import com.nurram.project.qibla.R
 
@@ -19,84 +23,40 @@ class GPSTracker(private val context: Context) : Service(), LocationListener {
 
     private var isGPSEnabled = false
     private var isNetworkEnabled = false
-    private var canGetLocation = false
 
-    var loc: Location? = null
-    var lat = 0.0
-    var lng = 0.0
+    var isLoading = MutableLiveData<Boolean>()
+    private val location = MutableLiveData<Location>()
 
     @SuppressLint("MissingPermission")
-    fun getLocation(): Location? {
-        try {
-            locationManager = context.getSystemService(LOCATION_SERVICE) as LocationManager
-            isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    fun getLocation(): MutableLiveData<Location> {
+        isLoading.postValue(true)
 
-            if (!isGPSEnabled && !isNetworkEnabled) {
-                // no network provider is enabled
-            } else {
-                canGetLocation = true
+        locationManager = context.getSystemService(LOCATION_SERVICE) as LocationManager
+        isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
-                if (isNetworkEnabled) {
-                    locationManager.requestLocationUpdates(
-                            LocationManager.NETWORK_PROVIDER,
-                            MIN_TIME_BW_UPDATES,
-                            MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(), this)
+        if(!isGPSEnabled) {
+            showSettingsAlert()
+        } else if(!isNetworkEnabled) {
+            Toast.makeText(context, "No Internet", Toast.LENGTH_SHORT).show()
+        } else {
+            locationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
+                MIN_TIME_BW_UPDATES,
+                MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(), this)
 
-                    loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-
-                    if (loc != null) {
-                        lat = loc!!.latitude
-                        lng = loc!!.longitude
-                    }
-                }
-
-                if (isGPSEnabled) {
-                    if (loc == null) {
-                        locationManager.requestLocationUpdates(
-                                LocationManager.GPS_PROVIDER,
-                                MIN_TIME_BW_UPDATES,
-                                MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(), this)
-
-                        loc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                        if (loc != null) {
-                            lat = loc!!.latitude
-                            lng = loc!!.longitude
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            val location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            this.location.postValue(location)
         }
-        return loc
+
+        return location
     }
 
     fun stopUsingGPS() {
         locationManager.removeUpdates(this@GPSTracker)
     }
 
-    fun getLatitude(): Double {
-        if (loc != null) {
-            lat = loc!!.latitude
-        }
-
-        return lat
-    }
-
-    fun getLongitude(): Double {
-        if (loc != null) {
-            lng = loc!!.longitude
-        }
-
-        return lng
-    }
-
-    fun canGetLocation(): Boolean {
-        return canGetLocation
-    }
-
-    fun showSettingsAlert() {
+    private fun showSettingsAlert() {
         val ctx = context as MainActivity
 
         AlertDialog.Builder(context).apply {
@@ -113,32 +73,19 @@ class GPSTracker(private val context: Context) : Service(), LocationListener {
     }
 
     override fun onLocationChanged(location: Location) {
-// TODO Auto-generated method stub
+        this.location.postValue(location)
     }
 
-    override fun onProviderDisabled(provider: String) {
-// TODO Auto-generated method stub
-    }
+    override fun onProviderDisabled(provider: String) {}
 
-    override fun onProviderEnabled(provider: String) {
-// TODO Auto-generated method stub
-    }
+    override fun onProviderEnabled(provider: String) {}
 
-    override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-// TODO Auto-generated method stub
-    }
+    override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
 
-    override fun onBind(intent: Intent): IBinder? {
-// TODO Auto-generated method stub
-        return null
-    }
+    override fun onBind(intent: Intent): IBinder? = null
 
     companion object {
         private const val MIN_DISTANCE_CHANGE_FOR_UPDATES: Long = 100 // 10 meters
         private const val MIN_TIME_BW_UPDATES = (1000 * 60).toLong()
-    }
-
-    init {
-        loc = getLocation()
     }
 }
