@@ -1,7 +1,7 @@
 package com.nurram.project.qibla
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Build
@@ -73,6 +73,17 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         setupCompass()
         return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == 1) {
+            when (requestCode) {
+                1 -> {
+                    fetchGPS()
+                }
+            }
+        }
     }
 
     private fun setupCompass() {

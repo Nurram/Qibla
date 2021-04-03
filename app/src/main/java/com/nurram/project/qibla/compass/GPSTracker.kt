@@ -11,6 +11,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
+import com.nurram.project.qibla.MainActivity
 import com.nurram.project.qibla.R
 
 class GPSTracker(private val context: Context) : Service(), LocationListener {
@@ -96,13 +97,16 @@ class GPSTracker(private val context: Context) : Service(), LocationListener {
     }
 
     fun showSettingsAlert() {
+        val ctx = context as MainActivity
+
         AlertDialog.Builder(context).apply {
             setTitle(context.resources.getString(R.string.gps_settings_title))
             setMessage(context.resources.getString(R.string.gps_settings_text))
             setPositiveButton(context.resources.getString(R.string.settings_button_ok)) { _, _ ->
                 val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                context.startActivity(intent)
+                ctx.startActivityForResult(intent, 1)
             }
+
             setNegativeButton(context.resources.getString(R.string.settings_button_cancel)) { dialog, _ -> dialog.cancel() }
             show()
         }
