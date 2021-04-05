@@ -6,27 +6,36 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.location.Location
-import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Bundle
 import android.os.IBinder
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.android.gms.location.*
 import com.nurram.project.qibla.MainActivity
 import com.nurram.project.qibla.R
 
-class GPSTracker(private val context: Context) : Service(), LocationListener {
+
+class GPSTracker(private val context: Context) : Service() {
     private lateinit var locationManager: LocationManager
 
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var isGPSEnabled = false
     private var isNetworkEnabled = false
 
     var isLoading = MutableLiveData<Boolean>()
     private val location = MutableLiveData<Location>()
 
+
+    private var locationCallback: LocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            location.postValue(locationResult.locations[0])
+        }
+    }
+
+    @Suppress("SENSELESS_COMPARISON")
     @SuppressLint("MissingPermission")
     fun getLocation(): MutableLiveData<Location> {
         isLoading.postValue(true)
@@ -40,20 +49,27 @@ class GPSTracker(private val context: Context) : Service(), LocationListener {
         } else if(!isNetworkEnabled) {
             Toast.makeText(context, "No Internet", Toast.LENGTH_SHORT).show()
         } else {
-            locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                MIN_TIME_BW_UPDATES,
-                MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(), this)
+            val locationRequest = LocationRequest.create().apply {
+                interval = 60000
+                fastestInterval = 10000
+                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            }
 
-            val location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            this.location.postValue(location)
+            if(fusedLocationProviderClient == null) {
+                fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+                fusedLocationProviderClient!!.requestLocationUpdates(
+                        locationRequest,
+                        locationCallback,
+                        Looper.myLooper()
+                )
+            }
         }
 
         return location
     }
 
     fun stopUsingGPS() {
-        locationManager.removeUpdates(this@GPSTracker)
+        fusedLocationProviderClient?.removeLocationUpdates(locationCallback)
     }
 
     private fun showSettingsAlert() {
@@ -72,20 +88,5 @@ class GPSTracker(private val context: Context) : Service(), LocationListener {
         }
     }
 
-    override fun onLocationChanged(location: Location) {
-        this.location.postValue(location)
-    }
-
-    override fun onProviderDisabled(provider: String) {}
-
-    override fun onProviderEnabled(provider: String) {}
-
-    override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
-
     override fun onBind(intent: Intent): IBinder? = null
-
-    companion object {
-        private const val MIN_DISTANCE_CHANGE_FOR_UPDATES: Long = 100 // 10 meters
-        private const val MIN_TIME_BW_UPDATES = (1000 * 60).toLong()
-    }
 }
