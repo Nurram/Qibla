@@ -14,6 +14,11 @@ import android.view.animation.RotateAnimation
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.MultiplePermissionsReport
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.nurram.project.qibla.compass.Compass
 import com.nurram.project.qibla.compass.Compass.CompassListener
 import com.nurram.project.qibla.compass.GPSTracker
@@ -36,7 +41,6 @@ class MainActivity : AppCompatActivity() {
     private var gps: GPSTracker? = null
 
     private var currentAzimuth = 0f
-    private val permissionCode = 1221
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,32 +77,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d("TAG", "From Menu")
         setupCompass()
         return true
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        Log.d("TAG", "From GPS Setting")
-        fetchGPS()
+        setupCompass()
     }
 
     private fun setupCompass() {
-        val permissionGranted = pref.getBoolean("permission_granted")
-        if (permissionGranted) {
-            fetchGPS()
-        } else {
-            binding.qiblaDegree.text = resources.getString(R.string.msg_permission_not_granted_yet)
-            binding.qiblaLocation.text = resources.getString(R.string.msg_permission_not_granted_yet)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION),
-                        permissionCode)
-            } else {
-                fetchGPS()
-            }
-        }
+        Dexter.withContext(this)
+                .withPermissions(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                ).withListener(object : MultiplePermissionsListener {
+                    override fun onPermissionsChecked(report: MultiplePermissionsReport) { /* ... */
+                        fetchGPS()
+                    }
+
+                    override fun onPermissionRationaleShouldBeShown(p0: MutableList<PermissionRequest>?, p1: PermissionToken?) {
+                        p1?.continuePermissionRequest()
+                    }
+                }).check()
+
         compass = Compass(this)
         val cl = object : CompassListener {
             override fun onNewAzimuth(azimuth: Float) {
@@ -108,7 +110,6 @@ class MainActivity : AppCompatActivity() {
         }
         compass.setListener(cl)
     }
-
 
     private fun adjustDial(azimuth: Float) {
         val an: Animation = RotateAnimation(-currentAzimuth, -azimuth,
@@ -147,24 +148,6 @@ class MainActivity : AppCompatActivity() {
         return where
     }
 
-
-    override fun onRequestPermissionsResult(requestCode: Int,
-                                            permissions: Array<String?>,
-                                            grantResults: IntArray) {
-        if (requestCode == permissionCode) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                pref.save("permission_granted", true)
-                binding.qiblaDegree.text = resources.getString(R.string.msg_permission_granted)
-                binding.qiblaLocation.text = resources.getString(R.string.msg_permission_granted)
-                binding.qiblaMecca.GONE()
-                fetchGPS()
-            } else {
-                Toast.makeText(applicationContext, resources.getString(R.string.toast_permission_required), Toast.LENGTH_LONG).show()
-                finish()
-            }
-        }
-    }
-
     private fun fetchGPS() {
         gps = GPSTracker(this)
         gps!!.isLoading.observe(this, {
@@ -187,7 +170,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
         gps!!.getLocation().observe(this, {
-            if(it != null) {
+            if (it != null) {
                 if (abs(it.latitude) > 0 || abs(it.longitude) > 0) {
                     gps!!.isLoading.postValue(false)
 
@@ -212,8 +195,9 @@ class MainActivity : AppCompatActivity() {
                         val y = sin(longDiff) * cos(kaabaLat)
                         val x = cos(myLatRad) * sin(kaabaLat) - sin(myLatRad) * cos(kaabaLat) * cos(longDiff)
                         val result = (Math.toDegrees(atan2(y, x)) + 360) % 360
-                        val strKaabaDirection: String = java.lang.String.format(Locale.ENGLISH, "%.0f", result.toFloat())
-                                .toString() + " " + resources.getString(R.string.degree) + " " + getDirectionString(result.toFloat())
+                        val strKaabaDirection: String = String.format(Locale.ENGLISH, "%.0f", result.toFloat()) +
+                                " ${resources.getString(R.string.degree)} " +
+                                getDirectionString(result.toFloat())
 
 
                         pref.save("kiblat_derajat", result.toFloat())
