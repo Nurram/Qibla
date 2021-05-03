@@ -82,8 +82,11 @@ class GPSTracker(private val context: Context) : Service() {
                 val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                 ctx.startActivityForResult(intent, 1)
             }
-
-            setNegativeButton(context.resources.getString(R.string.settings_button_cancel)) { dialog, _ -> dialog.cancel() }
+            setCancelable(false)
+            setNegativeButton(context.resources.getString(R.string.settings_button_cancel)) { dialog, _ ->
+                dialog.cancel()
+                ctx.hideProgress()
+            }
             show()
         }
     }

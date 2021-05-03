@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
                     qiblaDegree.GONE()
                     qiblaMecca.GONE()
                     qiblaDirection.GONE()
-                    binding.qiblaProgress.VISIBLE()
+                    qiblaProgress.VISIBLE()
                 }
             } else {
                 binding.apply {
@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
                     qiblaDegree.VISIBLE()
                     qiblaMecca.VISIBLE()
                     qiblaDirection.VISIBLE()
-                    binding.qiblaProgress.GONE()
+                    hideProgress()
                 }
             }
         })
@@ -210,5 +210,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    fun hideProgress() {
+        binding.qiblaProgress.GONE()
     }
 }

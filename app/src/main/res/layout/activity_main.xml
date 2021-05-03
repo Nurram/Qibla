@@ -44,7 +44,8 @@
             android:contentDescription="@string/qibla_compass"
             android:src="@drawable/compas_c"
             android:layout_gravity="center"
-            android:layout_margin="32dp"/>
+            android:layout_margin="32dp"
+            android:visibility="gone"/>
 
         <ImageView
             android:id="@+id/qibla_mecca"
@@ -52,7 +53,8 @@
             android:layout_height="match_parent"
             android:contentDescription="@string/qibla_compass"
             android:src="@drawable/qibla"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:visibility="gone"/>
     </FrameLayout>
 
     <TextView
