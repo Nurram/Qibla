@@ -2,18 +2,15 @@ package com.nurram.project.qibla
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -182,6 +179,7 @@ class MainActivity : AppCompatActivity() {
                     val strYourLocation = address[0].locality
 
                     binding.qiblaLocation.text = strYourLocation
+                    setupAds()
 
                     if (lat < 0.001 && lng < 0.001) {
                         binding.qiblaMecca.GONE()
@@ -214,5 +212,12 @@ class MainActivity : AppCompatActivity() {
 
     fun hideProgress() {
         binding.qiblaProgress.GONE()
+    }
+
+    private fun setupAds() {
+        MobileAds.initialize(this)
+
+        val adRequest = AdRequest.Builder().build()
+        binding.adView.loadAd(adRequest)
     }
 }
