@@ -47,6 +47,10 @@ class MainActivity : AppCompatActivity() {
 
         pref = PrefUtils(this)
         setupCompass()
+
+        MobileAds.initialize(this) { }
+        val adRequest = AdRequest.Builder().build()
+        binding.adView.loadAd(adRequest)
     }
 
     override fun onResume() {
