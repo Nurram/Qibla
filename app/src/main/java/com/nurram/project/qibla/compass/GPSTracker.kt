@@ -10,8 +10,8 @@ import android.location.LocationManager
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
 import com.nurram.project.qibla.MainActivity
@@ -37,16 +37,16 @@ class GPSTracker(private val context: Context) : Service() {
 
     @Suppress("SENSELESS_COMPARISON")
     @SuppressLint("MissingPermission")
-    fun getLocation(): MutableLiveData<Location> {
+    fun getLocation(): LiveData<Location> {
         isLoading.postValue(true)
 
         locationManager = context.getSystemService(LOCATION_SERVICE) as LocationManager
         isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
         isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
-        if(!isGPSEnabled) {
+        if (!isGPSEnabled) {
             showSettingsAlert()
-        } else if(!isNetworkEnabled) {
+        } else if (!isNetworkEnabled) {
             Toast.makeText(context, "No Internet", Toast.LENGTH_SHORT).show()
         } else {
             val locationRequest = LocationRequest.create().apply {
@@ -55,14 +55,17 @@ class GPSTracker(private val context: Context) : Service() {
                 priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             }
 
-            if(fusedLocationProviderClient == null) {
-                fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+            if (fusedLocationProviderClient == null) {
+                fusedLocationProviderClient =
+                    LocationServices.getFusedLocationProviderClient(context)
                 fusedLocationProviderClient!!.requestLocationUpdates(
-                        locationRequest,
-                        locationCallback,
-                        Looper.myLooper()
+                    locationRequest,
+                    locationCallback,
+                    Looper.getMainLooper()
                 )
             }
+
+            isLoading.postValue(false)
         }
 
         return location
@@ -80,12 +83,12 @@ class GPSTracker(private val context: Context) : Service() {
             setMessage(context.resources.getString(R.string.gps_settings_text))
             setPositiveButton(context.resources.getString(R.string.settings_button_ok)) { _, _ ->
                 val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                ctx.startActivityForResult(intent, 1)
+                ctx.onActivityResult.launch(intent)
             }
             setCancelable(false)
             setNegativeButton(context.resources.getString(R.string.settings_button_cancel)) { dialog, _ ->
                 dialog.cancel()
-                ctx.hideProgress()
+                isLoading.postValue(false)
             }
             show()
         }

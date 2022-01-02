@@ -1,13 +1,13 @@
 package com.nurram.project.qibla
 
 import android.Manifest
-import android.content.Intent
 import android.location.Geocoder
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
@@ -39,6 +39,11 @@ class MainActivity : AppCompatActivity() {
 
     private var currentAzimuth = 0f
 
+    val onActivityResult =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            setupCompass()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -48,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         pref = PrefUtils(this)
         setupCompass()
 
-        MobileAds.initialize(this) { }
+        MobileAds.initialize(this)
         val adRequest = AdRequest.Builder().build()
         binding.adView.loadAd(adRequest)
     }
@@ -82,25 +87,23 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        setupCompass()
-    }
-
     private fun setupCompass() {
         Dexter.withContext(this)
-                .withPermissions(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                ).withListener(object : MultiplePermissionsListener {
-                    override fun onPermissionsChecked(report: MultiplePermissionsReport) { /* ... */
-                        fetchGPS()
-                    }
+            .withPermissions(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ).withListener(object : MultiplePermissionsListener {
+                override fun onPermissionsChecked(report: MultiplePermissionsReport) {
+                    fetchGPS()
+                }
 
-                    override fun onPermissionRationaleShouldBeShown(p0: MutableList<PermissionRequest>?, p1: PermissionToken?) {
-                        p1?.continuePermissionRequest()
-                    }
-                }).check()
+                override fun onPermissionRationaleShouldBeShown(
+                    p0: MutableList<PermissionRequest>?,
+                    p1: PermissionToken?
+                ) {
+                    p1?.continuePermissionRequest()
+                }
+            }).check()
 
         compass = Compass(this)
         val cl = object : CompassListener {
@@ -113,27 +116,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun adjustDial(azimuth: Float) {
-        val an: Animation = RotateAnimation(-currentAzimuth, -azimuth,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f)
+        val an: Animation = RotateAnimation(
+            -currentAzimuth, -azimuth,
+            Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+            0.5f
+        )
         currentAzimuth = azimuth
         an.duration = 500
         an.repeatCount = 0
         an.fillAfter = true
-        binding.qiblaDirection.startAnimation(an)
+        binding.ivCompass.startAnimation(an)
     }
 
     private fun adjustArrowQibla(azimuth: Float) {
         val qiblaDegree = pref.getFloat("kiblat_derajat")
-        val an: Animation = RotateAnimation(-currentAzimuth + qiblaDegree, -azimuth,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f)
+        val an: Animation = RotateAnimation(
+            -currentAzimuth + qiblaDegree, -azimuth,
+            Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+            0.5f
+        )
 
         currentAzimuth = azimuth
         an.duration = 500
         an.repeatCount = 0
         an.fillAfter = true
-        binding.qiblaMecca.startAnimation(an)
+        binding.ivMeccaLogo.startAnimation(an)
     }
 
     private fun getDirectionString(azimuthDegrees: Float): String {
@@ -154,19 +161,18 @@ class MainActivity : AppCompatActivity() {
         gps!!.isLoading.observe(this, {
             if (it) {
                 binding.apply {
-                    qiblaLocation.GONE()
-                    qiblaDegree.GONE()
-                    qiblaMecca.GONE()
-                    qiblaDirection.GONE()
+                    tvLocation.GONE()
+                    tvDegree.GONE()
+                    ivMeccaLogo.GONE()
+                    ivCompass.GONE()
                     qiblaProgress.VISIBLE()
                 }
             } else {
                 binding.apply {
-                    qiblaLocation.VISIBLE()
-                    qiblaDegree.VISIBLE()
-                    qiblaMecca.VISIBLE()
-                    qiblaDirection.VISIBLE()
-                    hideProgress()
+                    tvLocation.VISIBLE()
+                    tvDegree.VISIBLE()
+                    ivMeccaLogo.VISIBLE()
+                    ivCompass.VISIBLE()
                 }
             }
         })
@@ -181,47 +187,38 @@ class MainActivity : AppCompatActivity() {
                     val geocoder = Geocoder(this, Locale.getDefault())
                     val address = geocoder.getFromLocation(lat, lng, 1)
                     val strYourLocation = address[0].locality
-
-                    binding.qiblaLocation.text = strYourLocation
-                    setupAds()
+                    binding.tvLocation.text = strYourLocation
 
                     if (lat < 0.001 && lng < 0.001) {
-                        binding.qiblaMecca.GONE()
-                        binding.qiblaDegree.text = resources.getString(R.string.location_not_ready)
-                        binding.qiblaLocation.text = resources.getString(R.string.location_not_ready)
+                        binding.ivMeccaLogo.GONE()
+                        binding.tvDegree.text = resources.getString(R.string.location_not_ready)
+                        binding.tvLocation.text =
+                            resources.getString(R.string.location_not_ready)
                     } else {
                         val kaabaLng = 39.826206
                         val kaabaLat = Math.toRadians(21.422487)
                         val myLatRad = Math.toRadians(lat)
                         val longDiff = Math.toRadians(kaabaLng - lng)
                         val y = sin(longDiff) * cos(kaabaLat)
-                        val x = cos(myLatRad) * sin(kaabaLat) - sin(myLatRad) * cos(kaabaLat) * cos(longDiff)
+                        val x = cos(myLatRad) * sin(kaabaLat) - sin(myLatRad) * cos(kaabaLat) * cos(
+                            longDiff
+                        )
                         val result = (Math.toDegrees(atan2(y, x)) + 360) % 360
-                        val strKaabaDirection: String = String.format(Locale.ENGLISH, "%.0f", result.toFloat()) +
-                                " ${resources.getString(R.string.degree)} " +
-                                getDirectionString(result.toFloat())
+                        val strKaabaDirection: String =
+                            String.format(Locale.ENGLISH, "%.0f", result.toFloat()) +
+                                    " ${resources.getString(R.string.degree)} " +
+                                    getDirectionString(result.toFloat())
 
 
                         pref.save("kiblat_derajat", result.toFloat())
-                        binding.qiblaDegree.text = strKaabaDirection
-                        binding.qiblaMecca.GONE()
+                        binding.tvDegree.text = strKaabaDirection
+                        binding.ivMeccaLogo.GONE()
                     }
                 } else {
-                    binding.qiblaMecca.GONE()
-                    binding.qiblaLocation.GONE()
+                    binding.ivMeccaLogo.GONE()
+                    binding.ivCompass.GONE()
                 }
             }
         })
-    }
-
-    fun hideProgress() {
-        binding.qiblaProgress.GONE()
-    }
-
-    private fun setupAds() {
-        MobileAds.initialize(this)
-
-        val adRequest = AdRequest.Builder().build()
-        binding.adView.loadAd(adRequest)
     }
 }

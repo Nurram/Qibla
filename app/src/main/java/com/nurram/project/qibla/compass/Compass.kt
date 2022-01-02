@@ -19,7 +19,8 @@ class Compass(context: Context) : SensorEventListener {
 
     private lateinit var listener: CompassListener
 
-    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val asensor: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val msensor: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
@@ -30,10 +31,14 @@ class Compass(context: Context) : SensorEventListener {
     private var azimuthFix = 0f
 
     fun start(context: Context) {
-        sensorManager.registerListener(this, asensor,
-                SensorManager.SENSOR_DELAY_GAME)
-        sensorManager.registerListener(this, msensor,
-                SensorManager.SENSOR_DELAY_GAME)
+        sensorManager.registerListener(
+            this, asensor,
+            SensorManager.SENSOR_DELAY_GAME
+        )
+        sensorManager.registerListener(
+            this, msensor,
+            SensorManager.SENSOR_DELAY_GAME
+        )
 
         val manager = context.packageManager
         val haveAS = manager.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER)
@@ -63,14 +68,6 @@ class Compass(context: Context) : SensorEventListener {
 
     fun stop() {
         sensorManager.unregisterListener(this)
-    }
-
-    private fun setAzimuthFix(fix: Float) {
-        azimuthFix = fix
-    }
-
-    fun resetAzimuthFix() {
-        setAzimuthFix(0f)
     }
 
     fun setListener(l: CompassListener?) {

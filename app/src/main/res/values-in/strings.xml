@@ -6,10 +6,5 @@
     <string name="settings_button_ok">Pengaturan</string>
     <string name="settings_button_cancel">Batal</string>
 
-    <string name="gps_provider_off">Pastikan GPS dan koneksi kamu aktif</string>
-    <string name="msg_permission_not_granted_yet">Lokasi belum tersedia</string>
-    <string name="msg_permission_granted">Akses lokasi diberikan</string>
-    <string name="toast_permission_required">Aplikasi ini membutuhkan akses lokasi</string>
     <string name="location_not_ready">Lokasi belum siap.</string>
-    <string name="pls_enable_location">Tolong nyalakan GPS</string>
 </resources>
